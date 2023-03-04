@@ -22,13 +22,15 @@ def main():
     global CONFIGS_LOCATION
     global CONFIG_FILE_PATH
 
-    possible_config_locations = ["./configs/", "/configs/"]
+    possible_config_locations = ["./configs/", "/configs/", "/run/secrets/"]
+    possible_config_names = ["config.json", "website-change-checker-config.json"]
     for config_location in possible_config_locations:
-        config_path = config_location + "config.json"
-        if exists(config_path):
-            CONFIGS_LOCATION = config_location
-            CONFIG_FILE_PATH = config_path
-            break
+        for config_name in possible_config_names:
+            config_path = config_location + config_name
+            if exists(config_path):
+                CONFIGS_LOCATION = config_location
+                CONFIG_FILE_PATH = config_path
+                break
     
     if CONFIG_FILE_PATH is None:
         exit_with_failure(
