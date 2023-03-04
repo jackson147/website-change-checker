@@ -6,7 +6,6 @@ services:
     build: .
     environment:
       - PYTHONUNBUFFERED=1
-    restart: never
     secrets:
       - website-change-checker-config.json
 
