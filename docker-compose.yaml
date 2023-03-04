@@ -3,11 +3,9 @@ version: '3.7'
 services:
   website-change-checker:
     image: website-change-checker:latest
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes: 
+        - './configs:/configs'
     build: .
-    restart: never
-    secrets:
-      - website-change-checker-config.json
-
-secrets:
-  website-change-checker-config.json:
-    external: true
+    restart: always
