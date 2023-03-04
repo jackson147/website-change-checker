@@ -1,0 +1,6 @@
+services:
+  website-change-checker:
+    image: website-change-checker:latest
+    volumes: './configs:/configs'
+    build: .
+    restart: always

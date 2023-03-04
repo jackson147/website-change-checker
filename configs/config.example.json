@@ -1,0 +1,7 @@
+{
+    "CHECK_URL" : "a.website.address.com",
+    "EMAIL_USERNAME" : "CHANGE ME",
+    "EMAIL_PASSWORD" : "CHANGE ME",
+    "RECIPIENT_ADDRESS" : "EXAMPLE@EXAMPLE.com",
+    "CHECK_INTERVAL_SECONDS" : "3600"
+}
