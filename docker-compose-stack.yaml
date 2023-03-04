@@ -11,4 +11,4 @@ services:
 
 secrets:
   website-change-checker-config.json:
-    external: true
+    file: ./configs/config.json
