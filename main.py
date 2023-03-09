@@ -50,7 +50,7 @@ def main():
     # Begin the loop to check if site has changed.
     response = urlopen(url).read()
     currentHash = hashlib.sha224(response).hexdigest()
-    print("Inital hash:", currentHash)
+    print_with_timestamp("Inital hash:", currentHash)
     while True:
         try:
             # Wait for check interval
@@ -64,16 +64,17 @@ def main():
 
             # Check if new hash is same as the previous hash
             if newHash == currentHash:
-                print("No change, sleeping for ", CHECK_INTERVAL_SECONDS, "seconds")
+                print_with_timestamp("No change, sleeping for ", CHECK_INTERVAL_SECONDS, "seconds")
                 continue
 
             # If something changed, alert and set currentHash
             else:
                 # notify
-                print("Site changed, sending alert")
+                print_with_timestamp("Site changed, sending alert")
                 send_changed_alert()
 
                 currentHash = newHash
+                print_with_timestamp("New hash:", currentHash)
 
         # To handle exceptions
         except Exception as e:
