@@ -21,7 +21,7 @@ SEARCH_TEXT = None
 PAGE_LOADING_TIME = 0
 EMAIL_USERNAME = None
 EMAIL_PASSWORD = None
-RECIPIENT_ADDRESS = None
+RECIPIENT_ADDRESSES = None
 CHECK_INTERVAL_SECONDS = None
 
 # Selenium webdriver setup
@@ -56,7 +56,7 @@ def main():
 
     load_config(CONFIG_FILE_PATH)
 
-    if CHECK_URL is None or SEARCH_TEXT is None or EMAIL_USERNAME is None or EMAIL_PASSWORD is None or EMAIL_USERNAME is None or RECIPIENT_ADDRESS is None:
+    if CHECK_URL is None or SEARCH_TEXT is None or EMAIL_USERNAME is None or EMAIL_PASSWORD is None or EMAIL_USERNAME is None or RECIPIENT_ADDRESSES is None:
         exit_with_failure(
             'missing required credentials in environment variables')
     
@@ -103,7 +103,7 @@ def load_config(path):
     global PAGE_LOADING_TIME
     global EMAIL_USERNAME
     global EMAIL_PASSWORD
-    global RECIPIENT_ADDRESS
+    global RECIPIENT_ADDRESSES
     global CHECK_INTERVAL_SECONDS
 
     with open(path, 'r') as file:
@@ -115,7 +115,7 @@ def load_config(path):
         EMAIL_USERNAME = data['EMAIL_USERNAME']
         EMAIL_PASSWORD = data['EMAIL_PASSWORD']
         CHECK_INTERVAL_SECONDS = int(data['CHECK_INTERVAL_SECONDS'])
-        RECIPIENT_ADDRESS = data['RECIPIENT_ADDRESS']
+        RECIPIENT_ADDRESSES = data['RECIPIENT_ADDRESSES']
 
 def send_changed_alert():
     server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
@@ -123,12 +123,13 @@ def send_changed_alert():
     message = f'\n\n{CHECK_URL} has changed'
 
     if message != '':
-        try:
-            server.sendmail(EMAIL_USERNAME, [RECIPIENT_ADDRESS], message)
-            print(message)
-        except:
-            print('unable to send:\n' + message)
-            raise
+        for RECIPIENT_ADDRESS in RECIPIENT_ADDRESSES:
+            try:
+                server.sendmail(EMAIL_USERNAME, [RECIPIENT_ADDRESS], message)
+                print(message)
+            except:
+                print('unable to send:\n' + message)
+                raise
 
     server.quit()
 
