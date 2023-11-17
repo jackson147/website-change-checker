@@ -16,13 +16,6 @@ from bs4 import BeautifulSoup
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'
 CONFIGS_LOCATION = None
 CONFIG_FILE_PATH = None
-CHECK_URL = None
-SEARCH_TEXT = None
-PAGE_LOADING_TIME = 0
-EMAIL_USERNAME = None
-EMAIL_PASSWORD = None
-RECIPIENT_ADDRESSES = None
-CHECK_INTERVAL_SECONDS = None
 
 # Selenium webdriver setup
 options = Options()
@@ -36,51 +29,49 @@ driver = webdriver.Chrome(
     options=options)
 
 def main():
-    global CONFIGS_LOCATION
-    global CONFIG_FILE_PATH
-
     possible_config_locations = ["./configs/", "/configs/", "/run/secrets/"]
     possible_config_names = ["config.json", "website-change-checker-config.json"]
+
+    true_config_file_path = None
     for config_location in possible_config_locations:
         for config_name in possible_config_names:
             config_path = config_location + config_name
             if exists(config_path):
-                CONFIGS_LOCATION = config_location
-                CONFIG_FILE_PATH = config_path
+                true_config_file_path = config_path
                 break
     
-    if CONFIG_FILE_PATH is None:
+    if true_config_file_path is None:
         exit_with_failure(
             'missing config.json file, could not find in locations: ' + ', '.join(str(x) for x in possible_config_locations)
         )
 
-    load_config(CONFIG_FILE_PATH)
+    config = load_config(true_config_file_path)
 
-    if CHECK_URL is None or SEARCH_TEXT is None or EMAIL_USERNAME is None or EMAIL_PASSWORD is None or EMAIL_USERNAME is None or RECIPIENT_ADDRESSES is None:
+    if config['CHECK_URL'] is None or config['SEARCH_TEXT'] is None or config['EMAIL_USERNAME'] is None or config['EMAIL_PASSWORD'] is None or config['EMAIL_USERNAME'] is None or config['RECIPIENT_ADDRESSES'] is None:
         exit_with_failure(
             'missing required credentials in environment variables')
     
     # Begin the loop to check if site has changed.
     while True:
         try:
-            print_with_timestamp("Checking url {} for text: '{}'".format(CHECK_URL, SEARCH_TEXT))
-            driver.get(CHECK_URL)
-            if(PAGE_LOADING_TIME > 0):
-                print_with_timestamp("Sleeping for {}s while page loads...".format(PAGE_LOADING_TIME))
-                time.sleep(PAGE_LOADING_TIME)
+            print_with_timestamp("Checking url {} for text: '{}'".format(config['CHECK_URL'], config['SEARCH_TEXT']))
+            driver.get(config['CHECK_URL'])
+            if(config['PAGE_LOADING_TIME'] > 0):
+                print_with_timestamp("Sleeping for {}s while page loads...".format(config['PAGE_LOADING_TIME']))
+                time.sleep(config['PAGE_LOADING_TIME'])
             html = driver.page_source
             soup = BeautifulSoup(html, features="html.parser")
-            value = soup.find(string=SEARCH_TEXT)
+            value = soup.find(string=config['SEARCH_TEXT'])
             
             if value is None or value == "":
                 # notify
-                print_with_timestamp("Search text no longer exists on site, sending alert!".format(SEARCH_TEXT))
-                send_changed_alert()
+                print_with_timestamp("Search text no longer exists on site, sending alert!".format(config['SEARCH_TEXT']))
+                send_changed_alert(config)
                 exit(0)
                 
             # Wait for check interval                
-            print_with_timestamp("No change, sleeping for {} seconds".format(CHECK_INTERVAL_SECONDS))
-            time.sleep(CHECK_INTERVAL_SECONDS)
+            print_with_timestamp("No change, sleeping for {} seconds".format(config['CHECK_INTERVAL_SECONDS']))
+            time.sleep(config['CHECK_INTERVAL_SECONDS'])
 
         # To handle exceptions
         except Exception as e:
@@ -98,34 +89,20 @@ def exit_with_failure(message):
     sys.exit(1)
 
 def load_config(path):
-    global CHECK_URL
-    global SEARCH_TEXT
-    global PAGE_LOADING_TIME
-    global EMAIL_USERNAME
-    global EMAIL_PASSWORD
-    global RECIPIENT_ADDRESSES
-    global CHECK_INTERVAL_SECONDS
-
     with open(path, 'r') as file:
-        data = json.load(file)
+        config = json.load(file)
+        return config
 
-        CHECK_URL = data['CHECK_URL']
-        SEARCH_TEXT = data['SEARCH_TEXT']
-        PAGE_LOADING_TIME = int(data['PAGE_LOADING_TIME'])
-        EMAIL_USERNAME = data['EMAIL_USERNAME']
-        EMAIL_PASSWORD = data['EMAIL_PASSWORD']
-        CHECK_INTERVAL_SECONDS = int(data['CHECK_INTERVAL_SECONDS'])
-        RECIPIENT_ADDRESSES = data['RECIPIENT_ADDRESSES']
-
-def send_changed_alert():
+def send_changed_alert(config):
     server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
-    message = f'\n\n{CHECK_URL} has changed'
+    server.login(config['EMAIL_USERNAME'], config['EMAIL_PASSWORD'])
+    check_url = config['CHECK_URL']
+    message = f'\n\n{check_url} has changed'
 
     if message != '':
-        for RECIPIENT_ADDRESS in RECIPIENT_ADDRESSES:
+        for RECIPIENT_ADDRESS in config['RECIPIENT_ADDRESSES']:
             try:
-                server.sendmail(EMAIL_USERNAME, [RECIPIENT_ADDRESS], message)
+                server.sendmail(config['EMAIL_USERNAME'], [RECIPIENT_ADDRESS], message)
                 print(message)
             except:
                 print('unable to send:\n' + message)
